@@ -29,8 +29,21 @@ with pytest installed works too: `python3 -m pytest tests/ -v`.
   `readings/`, `uploads/`, `last_time.txt` etc. relative to cwd).
 
 **Rule:** never import `enviro` at a test module's top level — importing
-the package boots the firmware. Always go through the `sim` fixture
-(`sim.enviro`, `sim.board`).
+the package boots the firmware. Always go through the fixtures.
+
+There are two fixtures:
+
+- **`sim`** — a provisioned grow board, ready to take readings and upload
+  (`sim.enviro`, `sim.board`, `sim.config`, ...).
+- **`provisioning`** — an *unprovisioned* board that has booted into the
+  captive portal. The fake `phew.server` records the routes instead of
+  serving HTTP; drive them like a browser with
+  `provisioning.server.sim_get(path)` / `sim_post(path, form)` and check
+  the generated `config.py` with `provisioning.read_config()`. Templates
+  are rendered for real (`{{...}}` expressions are evaluated), responses
+  expose `.status` / `.headers["Location"]` / `.template`, and finishing
+  provisioning raises `machine.SimulatedReset` where the device would
+  reboot. See `test_provisioning.py` for a full walkthrough.
 
 ## What you can poke and assert
 
@@ -69,7 +82,7 @@ fake module to `tests/sim/`.
 - `enviro.sleep()` ends with `machine.reset()`, which in the simulator
   raises `machine.SimulatedReset` — catch that if you drive a full
   `main.py`-style cycle.
-- Provisioning mode isn't simulated (the fake config is always
-  provisioned), and CPython won't catch MicroPython-specific issues
-  (memory limits, missing stdlib corners) — still smoke-test on the
-  device before a release.
+- The provisioning fixture exercises the route handlers and config
+  writing, not real HTTP/DNS/wifi-AP behaviour, and CPython won't catch
+  MicroPython-specific issues (memory limits, missing stdlib corners) —
+  still smoke-test on the device before a release.
