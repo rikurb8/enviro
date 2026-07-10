@@ -13,3 +13,6 @@ package = false
 
 [dependency-groups]
 dev = ["pytest>=8"]
+server = [
+    "flask>=3.0,<4",
+]

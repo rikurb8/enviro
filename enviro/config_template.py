@@ -30,6 +30,9 @@ custom_http_url = None
 custom_http_username = None
 custom_http_password = None
 
+# optional one-time provisioning event endpoint
+provisioning_call_home_url = None
+
 # mqtt broker settings
 mqtt_broker_address = None
 mqtt_broker_username = None

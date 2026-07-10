@@ -64,6 +64,7 @@ def provisioning(tmp_path, monkeypatch):
   import enviro
   import machine
   import phew
+  import urequests
   from phew import server
 
   def read_config():
@@ -77,5 +78,7 @@ def provisioning(tmp_path, monkeypatch):
     server=server,
     phew=phew,
     machine=machine,
+    config=sys.modules["config"],
+    urequests=urequests,
     read_config=read_config,
   )

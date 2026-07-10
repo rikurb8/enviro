@@ -12,10 +12,12 @@
 
 import argparse
 import functools
+import json
 import mimetypes
 import os
 import sys
 import tempfile
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -27,7 +29,7 @@ import simboot
 print = functools.partial(print, flush=True)
 
 
-def boot_unprovisioned_board():
+def boot_unprovisioned_board(call_home_url):
   workdir = Path(tempfile.mkdtemp(prefix="enviro-provisioning-"))
   simboot.layout_device_fs(workdir)
   os.chdir(workdir)
@@ -37,7 +39,36 @@ def boot_unprovisioned_board():
   # with no config module available the firmware boots straight into
   # provisioning mode and registers the captive portal routes
   import enviro  # noqa: F401
+  import config
+  # Pre-fill the real provisioning form so completing it appears in the
+  # dashboard without needing a physical board.
+  config.provisioning_call_home_url = call_home_url
   return workdir
+
+
+def forward_simulated_requests():
+  """Make the preview's fake device HTTP client send call-home requests."""
+  import urequests
+  simulated_post = urequests.post
+
+  class Response:
+    def __init__(self, status_code):
+      self.status_code = status_code
+
+    def close(self):
+      pass
+
+  def post(url, **kwargs):
+    # Keep the fake's request log useful when debugging the simulator.
+    simulated_post(url, **kwargs)
+    payload = json.dumps(kwargs.get("json", {})).encode()
+    request = urllib.request.Request(
+      url, data=payload, method="POST",
+      headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(request, timeout=5) as response:
+      return Response(response.status)
+
+  urequests.post = post
 
 
 class PortalBridge(BaseHTTPRequestHandler):
@@ -109,8 +140,10 @@ class PortalBridge(BaseHTTPRequestHandler):
     print(config)
     return (
       "<h1>&#127881; Provisioning complete</h1>"
-      "<p>The device would reset now. The generated <code>config.py</code> "
-      f"(also printed to the terminal) is at <code>{self.workdir}/config.py</code>:</p>"
+      "<p>The device would reset now. It attempted to send its provisioning event to the "
+      f"<a href='{self.dashboard_url}'>local dashboard</a>. The generated "
+      "<code>config.py</code> (also printed to the terminal) is at "
+      f"<code>{self.workdir}/config.py</code>:</p>"
       f"<pre style='background:#eee;padding:1em'>{config}</pre>"
     ).encode()
 
@@ -118,9 +151,14 @@ class PortalBridge(BaseHTTPRequestHandler):
 def main():
   parser = argparse.ArgumentParser(description="preview the provisioning portal locally")
   parser.add_argument("--port", type=int, default=8080)
+  parser.add_argument("--dashboard-url", default="http://localhost:5001",
+                      help="local dashboard URL (default: %(default)s)")
   args = parser.parse_args()
+  dashboard_url = args.dashboard_url.rstrip("/")
+  call_home_url = f"{dashboard_url}/api/provisioned"
 
-  workdir = boot_unprovisioned_board()
+  workdir = boot_unprovisioned_board(call_home_url)
+  forward_simulated_requests()
   from phew import server as phew_server
   import machine
 
@@ -128,9 +166,11 @@ def main():
   PortalBridge.machine = machine
   PortalBridge.workdir = workdir
   PortalBridge.base_url = f"http://localhost:{args.port}"
+  PortalBridge.dashboard_url = dashboard_url
 
   print(f"\n> simulated device filesystem: {workdir}")
-  print(f"> provisioning portal running at {PortalBridge.base_url} (ctrl+c to stop)\n")
+  print(f"> provisioning portal running at {PortalBridge.base_url}")
+  print(f"> call-home will be sent to {call_home_url} (start `task server` first; ctrl+c to stop)\n")
 
   try:
     ThreadingHTTPServer(("localhost", args.port), PortalBridge).serve_forever()

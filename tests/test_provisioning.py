@@ -65,10 +65,19 @@ def test_full_provisioning_flow_writes_config(provisioning):
   assert cfg["upload_frequency"] == 5
   assert cfg["destination"] == "http"
   assert cfg["custom_http_url"] == "http://example.com/enviro"
+  assert cfg["provisioning_call_home_url"] == ""
   assert cfg["auto_water"] is True
   assert cfg["moisture_target_a"] == 60
   assert cfg["moisture_target_b"] == 55
   assert cfg["moisture_target_c"] == 50
+
+
+def test_destination_page_shows_the_configured_call_home_url(provisioning):
+  provisioning.config.provisioning_call_home_url = "http://localhost:5001/api/provisioned"
+
+  page = provisioning.server.sim_get("/provision-step-4-destination")
+
+  assert "http://localhost:5001/api/provisioned" in page
 
 
 def test_finishing_provisioning_resets_the_board(provisioning):
@@ -76,6 +85,17 @@ def test_finishing_provisioning_resets_the_board(provisioning):
     provisioning.server.sim_post("/provision-step-5-done", {})
   # provisioned flag was written before the reset
   assert provisioning.read_config()["provisioned"] is True
+
+
+def test_finishing_provisioning_calls_home_when_configured(provisioning):
+  provisioning.config.provisioning_call_home_url = "http://server/api/provisioned"
+  with pytest.raises(provisioning.machine.SimulatedReset):
+    provisioning.server.sim_post("/provision-step-5-done", {})
+
+  request = provisioning.urequests.sim_requests[0]
+  assert request["url"] == "http://server/api/provisioned"
+  assert request["json"]["event"] == "provisioned"
+  assert request["json"]["model"] == "grow"
 
 
 def test_networks_json_lists_visible_ssids(provisioning):

@@ -48,15 +48,23 @@ There are two fixtures:
 ## Previewing the provisioning portal in a browser
 
 ```bash
+# In one terminal:
+task server
+
+# In another:
 uv run tests/provisioning_preview.py   # then open http://localhost:8080
 ```
 
 Boots an unprovisioned simulated board and bridges the captive portal
 onto a real local HTTP server — your browser plays the phone that
-connects to the board's access point. Walk through the real pages;
-finishing the flow shows the generated `config.py` (also printed to the
-terminal) instead of resetting the board. Handy for iterating on the
-provisioning HTML or adding new setup steps without a device.
+connects to the board's access point. The call-home field is prefilled
+with `http://localhost:5001/api/provisioned`; finishing the flow sends a
+real request to the local dashboard, where the simulated board appears.
+The completion page also links to it. Use `--dashboard-url URL` to use a
+different dashboard. The generated `config.py` is printed and retained
+in a temporary directory instead of resetting the board. Handy for
+iterating on the provisioning HTML or adding new setup steps without a
+device.
 
 ## What you can poke and assert
 

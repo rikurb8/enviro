@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1110">
+  <title>Enviro · Local receiver</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1110;
+      --surface: #111918;
+      --surface-raised: #17211f;
+      --line: #263431;
+      --text: #f1f6f3;
+      --muted: #8b9b96;
+      --faint: #5f706b;
+      --mint: #8ee6bd;
+      --mint-strong: #45d89a;
+      --blue: #91c8ff;
+      --amber: #f4c878;
+      --shadow: 0 18px 50px rgba(0, 0, 0, .2);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    a { color: inherit; }
+    .shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 76px;
+      border-bottom: 1px solid rgba(142, 230, 189, .12);
+    }
+    .brand { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; font-weight: 700; letter-spacing: -.02em; }
+    .brand-mark {
+      display: grid; place-items: center; width: 31px; height: 31px;
+      color: var(--bg); background: var(--mint); border-radius: 10px 10px 10px 3px;
+    }
+    .brand-mark svg { width: 18px; height: 18px; }
+    .brand small { display: block; color: var(--faint); font-size: 10px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+    .actions { display: flex; align-items: center; gap: 10px; }
+    .button, .api-link {
+      display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 13px;
+      border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted);
+      font: inherit; font-size: 13px; text-decoration: none; cursor: pointer; transition: .18s ease;
+    }
+    .button:hover, .api-link:hover { border-color: var(--mint-strong); color: var(--text); background: rgba(142, 230, 189, .06); }
+    .button svg { width: 14px; height: 14px; }
+    .hero { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding: 58px 0 35px; }
+    .eyebrow { margin: 0 0 11px; color: var(--mint); font-size: 11px; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { max-width: 670px; margin: 0; font-size: clamp(2rem, 4.5vw, 3.55rem); line-height: 1.03; letter-spacing: -.055em; }
+    .hero-copy { max-width: 560px; margin: 17px 0 0; color: var(--muted); font-size: 16px; }
+    .status { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 9px; padding: 9px 12px; border: 1px solid rgba(69, 216, 154, .25); border-radius: 999px; color: var(--mint); background: rgba(69, 216, 154, .07); font-size: 12px; font-weight: 650; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mint-strong); box-shadow: 0 0 0 4px rgba(69, 216, 154, .12); }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 38px; }
+    .stat { min-height: 112px; padding: 18px 19px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+    .stat-label { display: block; color: var(--muted); font-size: 12px; }
+    .stat-value { display: block; margin-top: 10px; color: var(--text); font-size: 25px; font-weight: 650; letter-spacing: -.035em; }
+    .stat-value.compact { font-size: 15px; line-height: 1.35; }
+    .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+    h2 { margin: 0; font-size: 19px; letter-spacing: -.025em; }
+    .section-note { color: var(--faint); font-size: 12px; }
+    .device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 13px; }
+    .card { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); overflow: hidden; }
+    .device-card { padding: 19px; }
+    .device-head { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+    .device-name { margin: 0; font-size: 17px; font-weight: 650; letter-spacing: -.02em; }
+    .device-model { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .device-badge { padding: 4px 7px; border-radius: 5px; color: var(--mint); background: rgba(142, 230, 189, .09); font-size: 10px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+    .device-id { margin: 16px 0 0; color: var(--faint); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 18px -19px -19px; border-top: 1px solid var(--line); background: var(--line); }
+    .metric { min-width: 0; padding: 13px 16px; background: var(--surface); }
+    .metric-label { display: block; color: var(--muted); font-size: 11px; text-transform: capitalize; }
+    .metric-value { display: block; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; font-weight: 600; letter-spacing: -.025em; }
+    .metric-unit { color: var(--faint); font-size: 11px; font-weight: 450; }
+    .empty-device { margin: 19px -19px -19px; padding: 16px 19px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    .empty { padding: 38px 20px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); text-align: center; }
+    .lower-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr); gap: 13px; margin-top: 42px; }
+    .panel-heading { display: flex; align-items: center; justify-content: space-between; padding: 18px 19px; border-bottom: 1px solid var(--line); }
+    .activity { list-style: none; margin: 0; padding: 4px 19px; }
+    .activity-item { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid rgba(38, 52, 49, .7); }
+    .activity-item:last-child { border-bottom: 0; }
+    .activity-icon { flex: 0 0 auto; display: grid; place-items: center; width: 27px; height: 27px; border-radius: 8px; color: var(--blue); background: rgba(145, 200, 255, .1); font-size: 12px; }
+    .activity-icon.provisioned { color: var(--amber); background: rgba(244, 200, 120, .1); }
+    .activity-main { min-width: 0; flex: 1; }
+    .activity-title { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; font-size: 13px; }
+    .activity-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    time { color: var(--faint); font-size: 11px; white-space: nowrap; }
+    .activity-detail { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+    .raw-panel { align-self: start; }
+    details summary { display: flex; align-items: center; justify-content: space-between; padding: 18px 19px; cursor: pointer; list-style: none; font-weight: 600; }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::after { content: '+'; color: var(--faint); font-size: 20px; font-weight: 300; }
+    details[open] summary::after { content: '−'; }
+    .raw-content { border-top: 1px solid var(--line); }
+    .raw-group h3 { margin: 0; padding: 14px 19px 8px; color: var(--muted); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+    .raw-event { padding: 10px 19px; border-top: 1px solid rgba(38, 52, 49, .7); }
+    .raw-event-header { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; }
+    pre { max-height: 180px; margin: 9px 0 0; padding: 11px; overflow: auto; border-radius: 7px; background: #0c1312; color: #b9cec5; font: 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .footer { display: flex; justify-content: space-between; gap: 16px; padding: 35px 0 28px; color: var(--faint); font-size: 11px; }
+    .footer a { color: var(--muted); text-decoration: none; }
+    .footer a:hover { color: var(--mint); }
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 28px, 600px); }
+      .topbar { min-height: 64px; }
+      .api-link { display: none; }
+      .hero { display: block; padding: 42px 0 28px; }
+      .status { margin-top: 22px; }
+      .stats { grid-template-columns: repeat(2, 1fr); margin-bottom: 31px; }
+      .stat { min-height: 98px; padding: 15px; }
+      .stat-value { margin-top: 7px; font-size: 21px; }
+      .lower-grid { grid-template-columns: 1fr; margin-top: 31px; }
+      .footer { display: block; }
+      .footer span { display: block; margin-top: 7px; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .card { animation: rise .35s ease both; }
+      .device-card:nth-child(2) { animation-delay: .04s; }
+      .device-card:nth-child(3) { animation-delay: .08s; }
+      @keyframes rise { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+    }
+  </style>
+</head>
+<body>
+  {% set metric_labels = {'temperature': 'Temperature', 'humidity': 'Humidity', 'pressure': 'Pressure', 'voltage': 'Battery', 'light': 'Light', 'color_temperature': 'Colour temp.', 'aqi': 'Air quality'} %}
+  {% set metric_units = {'temperature': '°C', 'humidity': '%', 'pressure': 'hPa', 'voltage': 'V', 'light': 'lux', 'color_temperature': 'K'} %}
+  <header class="topbar shell">
+    <a class="brand" href="/" aria-label="Enviro dashboard home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 4.5C12 4.5 6 7 6 13.5c0 3.3 2.4 5.5 5.5 5.5 5.8 0 8-6.5 8-14.5Z"/><path d="M4 20c2.6-4.2 6.1-6.6 10.5-8"/></svg>
+      </span>
+      <span>enviro <small>local receiver</small></span>
+    </a>
+    <nav class="actions" aria-label="Dashboard actions">
+      <a class="api-link" href="/api/data">View JSON <span aria-hidden="true">↗</span></a>
+      <button class="button" type="button" onclick="window.location.reload()" title="Refresh dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0 1 4"/><path d="M20 4v7h-7"/></svg>
+        Refresh
+      </button>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Local sensor network</p>
+        <h1>A clear view of your environment.</h1>
+        <p class="hero-copy">Live data received from your Enviro devices, kept locally on this machine.</p>
+      </div>
+      <div class="status"><span class="status-dot" aria-hidden="true"></span>Receiver online</div>
+    </section>
+
+    <section class="stats" aria-label="Dashboard summary">
+      <div class="stat"><span class="stat-label">Devices seen</span><strong class="stat-value">{{ stats.devices }}</strong></div>
+      <div class="stat"><span class="stat-label">Reading uploads</span><strong class="stat-value">{{ stats.readings }}</strong></div>
+      <div class="stat"><span class="stat-label">Board models</span><strong class="stat-value compact">{{ stats.models|join(', ') if stats.models else 'None yet' }}</strong></div>
+      <div class="stat"><span class="stat-label">Last received</span><strong class="stat-value compact">{% if stats.last_received %}<time data-time="{{ stats.last_received }}">{{ stats.last_received }}</time>{% else %}Awaiting data{% endif %}</strong></div>
+    </section>
+
+    <section aria-labelledby="devices-heading">
+      <div class="section-heading">
+        <h2 id="devices-heading">Your devices</h2>
+        <span class="section-note">Latest available measurements</span>
+      </div>
+      {% if devices %}
+      <div class="device-grid">
+        {% for device in devices %}
+        <article class="card device-card">
+          <div class="device-head">
+            <div>
+              <h3 class="device-name">{{ device.nickname or 'Unnamed device' }}</h3>
+              <p class="device-model">{{ device.model or 'Unknown model' }}</p>
+            </div>
+            <span class="device-badge">{% if device.latest %}Active{% else %}New{% endif %}</span>
+          </div>
+          {% if device.uid %}<p class="device-id" title="{{ device.uid }}">{{ device.uid }}</p>{% endif %}
+          {% if device.latest and device.latest.readings is mapping %}
+            <div class="metrics">
+              {% for key, value in device.latest.readings.items() %}
+                {% if loop.index <= 6 %}
+                <div class="metric">
+                  <span class="metric-label">{{ metric_labels.get(key, key.replace('_', ' ')) }}</span>
+                  <strong class="metric-value">{{ value }} <span class="metric-unit">{{ metric_units.get(key, '') }}</span></strong>
+                </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-device">Registered and waiting for its first reading.</div>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty">No devices yet. Complete provisioning or send a reading to get started.</div>
+      {% endif %}
+    </section>
+
+    <section class="lower-grid" aria-label="Recent activity and raw data">
+      <div class="card">
+        <div class="panel-heading"><h2>Recent activity</h2><span class="section-note">{{ activity|length }} event{% if activity|length != 1 %}s{% endif %}</span></div>
+        {% if activity %}
+        <ul class="activity">
+          {% for item in activity[:8] %}
+          {% set event = item.event %}
+          <li class="activity-item">
+            <span class="activity-icon {% if item.kind == 'Provisioned' %}provisioned{% endif %}" aria-hidden="true">{% if item.kind == 'Provisioned' %}✦{% else %}⌁{% endif %}</span>
+            <div class="activity-main">
+              <div class="activity-title"><strong>{{ event.nickname or event.uid or 'Unknown device' }}</strong>{% if event.received_at %}<time data-time="{{ event.received_at }}">{{ event.received_at }}</time>{% endif %}</div>
+              <p class="activity-detail">{% if item.kind == 'Provisioned' %}Provisioned as {{ event.model or 'an Enviro board' }}{% elif event.readings is mapping %}{{ event.readings|length }} measurement{% if event.readings|length != 1 %}s{% endif %} uploaded{% else %}Reading uploaded{% endif %}</p>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}<div class="empty" style="margin: 15px;">Waiting for the first event.</div>{% endif %}
+      </div>
+
+      <details class="card raw-panel">
+        <summary>Raw event data <span class="section-note">For debugging</span></summary>
+        <div class="raw-content">
+          {% if provisioning %}
+          <div class="raw-group"><h3>Provisioned</h3>
+            {% for event in provisioning[:5] %}
+            <div class="raw-event"><div class="raw-event-header"><span>{{ event.nickname or event.uid or 'Unknown device' }}</span><time data-time="{{ event.received_at }}">{{ event.received_at }}</time></div><pre>{{ event|tojson(indent=2) }}</pre></div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if readings %}
+          <div class="raw-group"><h3>Readings</h3>
+            {% for event in readings[:5] %}
+            <div class="raw-event"><div class="raw-event-header"><span>{{ event.nickname or event.uid or 'Unknown device' }}</span><time data-time="{{ event.received_at }}">{{ event.received_at }}</time></div><pre>{{ event|tojson(indent=2) }}</pre></div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% if not provisioning and not readings %}<div class="empty" style="margin: 15px;">No raw events to show.</div>{% endif %}
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <footer class="footer shell"><span>Local receiver · data stored in <code>server/data.json</code></span><span>Refresh for the latest data · <a href="/api/data">API access</a></span></footer>
+  <script>
+    // Keep timestamps readable in the viewer's local timezone while retaining the ISO value.
+    document.querySelectorAll('time[data-time]').forEach(function (element) {
+      var date = new Date(element.dataset.time);
+      if (!Number.isNaN(date.getTime())) {
+        element.textContent = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+        element.title = date.toISOString();
+      }
+    });
+  </script>
+</body>
+</html>

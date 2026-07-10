@@ -5,6 +5,7 @@
 - [Supported products](#supported-products)
 - [Supported endpoints](#supported-endpoints)
 - [Documentation](#documentation)
+- [Development](#development)
 
 ## About Enviro
 
@@ -54,3 +55,19 @@ You can use 3xAA or 3xAAA (either alkaline or NiMH), a single cell LiPo battery,
 - Getting Started with Enviro ([Learn link](https://learn.pimoroni.com/article/getting-started-with-enviro))
 - Enviro and InfluxDB ([Learn link](https://learn.pimoroni.com/article/enviro-and-influxdb))
 - Plant Monitoring with Enviro Grow ([Learn link](https://learn.pimoroni.com/article/plant-monitoring-with-enviro-grow))
+
+## Development
+
+The root [Taskfile](Taskfile.yml) provides five helpers. Install
+[uv](https://docs.astral.sh/uv/) and [Task](https://taskfile.dev/) first, then
+run these commands from the repository root:
+
+| Command | Purpose |
+| --- | --- |
+| `task help` | List the available helpers. |
+| `task setup` | Sync every uv-managed desktop dependency. |
+| `task test` | Run the firmware testbench. |
+| `task server` | Start the local dashboard on port 5001. |
+| `task check` | Compile desktop Python code and run the test suite. |
+
+See [server/README.md](server/README.md) for dashboard setup and endpoint URLs.

@@ -1,0 +1,28 @@
+version: '3'
+
+tasks:
+  help:
+    desc: List the available development helpers
+    cmds:
+      - task --list
+
+  setup:
+    desc: Install and lock all desktop development dependencies with uv
+    cmds:
+      - uv sync --all-groups
+
+  test:
+    desc: Run the firmware testbench
+    cmds:
+      - uv run pytest tests/
+
+  server:
+    desc: Start the local dashboard at http://localhost:5001
+    cmds:
+      - uv run --group server python server/app.py
+
+  check:
+    desc: Compile desktop Python code and run the full test suite
+    deps: [test]
+    cmds:
+      - uv run python -m compileall -q enviro main.py tests

@@ -108,6 +108,7 @@ def provision_step_4_destination(request):
     config.custom_http_url = request.form["custom_http_url"]
     config.custom_http_username = request.form["custom_http_username"]
     config.custom_http_password = request.form["custom_http_password"]
+    config.provisioning_call_home_url = request.form.get("provisioning_call_home_url", "")
 
     # mqtt
     config.mqtt_broker_address = request.form["mqtt_broker_address"]
@@ -131,7 +132,7 @@ def provision_step_4_destination(request):
     else:
       return redirect(f"http://{DOMAIN}/provision-step-5-done")
   else:
-    return render_template("enviro/html/provision-step-4-destination.html", board=model)
+    return render_template("enviro/html/provision-step-4-destination.html", board=model, config=config)
     
 
 @server.route("/provision-step-grow-sensors", methods=["GET", "POST"])
@@ -160,14 +161,38 @@ def provision_step_grow_sensors(request):
     return render_template("enviro/html/provision-step-grow-sensors.html", board=model)
 
 
+def call_home():
+  """Send a best-effort event once the device has been provisioned."""
+  url = getattr(config, "provisioning_call_home_url", None)
+  if not url:
+    return
+
+  try:
+    logging.info("> calling home after provisioning")
+    enviro.reconnect_wifi(config.wifi_ssid, config.wifi_password, config.wifi_country)
+    import urequests
+    response = urequests.post(url, json={
+      "event": "provisioned",
+      "model": model,
+      "nickname": config.nickname,
+      "uid": helpers.uid()
+    })
+    logging.info(f"  - call home returned {response.status_code}")
+    response.close()
+  except Exception as exc:
+    # Provisioning is complete even when the debug server is unavailable.
+    logging.warn(f"  - call home failed: {exc}")
+
+
 @server.route("/provision-step-5-done", methods=["GET", "POST"])
 def provision_step_5_done(request):
   config.provisioned = True
   write_config()
 
-  # a post request to the done handler means we're finished and
-  # should reset the board
+  # A post request means setup is complete. Call home before resetting so
+  # the local dashboard can confirm that Wi-Fi credentials work.
   if request.method == "POST":
+    call_home()
     machine.reset()
     return
 
