@@ -1,0 +1,15 @@
+# desktop tooling only - this file is not part of the firmware and is not
+# included in uf2-manifest.txt. it exists so the testbench in tests/ can be
+# run anywhere with uv: `uv run pytest tests/`
+[project]
+name = "enviro-testbench"
+version = "0.0.0"
+description = "desktop testbench for the enviro firmware (see tests/README.md)"
+requires-python = ">=3.9"
+
+[tool.uv]
+# firmware repo, nothing to build or install
+package = false
+
+[dependency-groups]
+dev = ["pytest>=8"]

@@ -4,8 +4,13 @@ Runs the **real firmware code** on desktop Python (no device needed) by
 shadowing every MicroPython/hardware module with a fake from `tests/sim/`.
 
 ```bash
-python3 -m pytest tests/ -v
+uv run pytest tests/ -v
 ```
+
+[uv](https://docs.astral.sh/uv/) fetches Python and the locked pytest
+version automatically (see `pyproject.toml` / `uv.lock` at the repo root),
+so a fresh clone needs nothing but uv itself. Without uv, any Python 3.9+
+with pytest installed works too: `python3 -m pytest tests/ -v`.
 
 ## How it works
 
