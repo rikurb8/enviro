@@ -45,6 +45,19 @@ There are two fixtures:
   provisioning raises `machine.SimulatedReset` where the device would
   reboot. See `test_provisioning.py` for a full walkthrough.
 
+## Previewing the provisioning portal in a browser
+
+```bash
+uv run tests/provisioning_preview.py   # then open http://localhost:8080
+```
+
+Boots an unprovisioned simulated board and bridges the captive portal
+onto a real local HTTP server — your browser plays the phone that
+connects to the board's access point. Walk through the real pages;
+finishing the flow shows the generated `config.py` (also printed to the
+terminal) instead of resetting the board. Handy for iterating on the
+provisioning HTML or adding new setup steps without a device.
+
 ## What you can poke and assert
 
 | Handle | What it does |
