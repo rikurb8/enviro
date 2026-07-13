@@ -21,6 +21,12 @@ tasks:
     cmds:
       - uv run --group server python server/app.py
 
+  server:migrate:
+    desc: Apply pending dashboard database migrations ('-- status' to inspect)
+    dir: server
+    cmds:
+      - uv run --group server python migrations.py {{.CLI_ARGS}}
+
   check:
     desc: Compile desktop Python code and run the full test suite
     deps: [test]

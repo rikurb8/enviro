@@ -105,6 +105,7 @@ celerybeat.pid
 .venv
 
 # Local dashboard event store
+server/data.db
 server/data.json
 server/data.tmp
 env/

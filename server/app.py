@@ -1,36 +1,36 @@
 """Tiny local Enviro receiver and dashboard."""
 from datetime import datetime, timezone
-import json
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
+from sqlmodel import Session, select
+
+import migrations
+from db import KINDS, Event, engine
 
 BASE_DIR = Path(__file__).parent
 app = Flask(__name__, template_folder=str(BASE_DIR / "templates"))
-STORE = BASE_DIR / "data.json"
 
 
 def load_data():
-    if not STORE.exists():
-        return {"provisioning": [], "readings": []}
-    try:
-        return json.loads(STORE.read_text())
-    except (json.JSONDecodeError, OSError):
-        return {"provisioning": [], "readings": []}
-
-
-def save_data(data):
-    temporary = STORE.with_suffix(".tmp")
-    temporary.write_text(json.dumps(data, indent=2))
-    temporary.replace(STORE)
+    data = {kind: [] for kind in KINDS}
+    with Session(engine) as session:
+        for event in session.exec(select(Event).order_by(Event.id)).all():
+            data.setdefault(event.kind, []).append(event.payload)
+    return data
 
 
 def record(kind, payload):
-    data = load_data()
     event = {"received_at": datetime.now(timezone.utc).isoformat(), **payload}
-    data[kind].append(event)
-    save_data(data)
+    with Session(engine) as session:
+        session.add(
+            Event(kind=kind, received_at=event.get("received_at", ""), payload=event)
+        )
+        session.commit()
     return event
+
+
+migrations.migrate()
 
 
 def dashboard_summary(data):

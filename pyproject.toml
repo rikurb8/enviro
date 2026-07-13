@@ -15,4 +15,5 @@ package = false
 dev = ["pytest>=8"]
 server = [
     "flask>=3.0,<4",
+    "sqlmodel>=0.0.22,<1",
 ]
