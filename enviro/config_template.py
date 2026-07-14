@@ -56,5 +56,14 @@ moisture_target_a = 50
 moisture_target_b = 50
 moisture_target_c = 50
 
+# Pump calibration for remote watering. Set the shared rate during
+# provisioning; optional channel rates override it when present.
+pump_ml_per_second = None
+pump_ml_per_second_a = None
+pump_ml_per_second_b = None
+pump_ml_per_second_c = None
+remote_watering_max_ml = 100
+remote_watering_max_seconds = 60
+
 # compensate for usb power
 usb_power_temperature_offset = 4.5

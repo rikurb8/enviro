@@ -444,6 +444,11 @@ def cache_upload(readings):
     "model": model,
     "uid": helpers.uid()
   }
+  board = get_board()
+  if hasattr(board, "remote_watering_capabilities"):
+    payload["capabilities"] = {
+      "remote_watering": board.remote_watering_capabilities()
+    }
 
   uploads_filename = f"uploads/{helpers.datetime_file_string()}.json"
   helpers.mkdir_safe("uploads")

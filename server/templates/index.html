@@ -84,6 +84,15 @@
     .metric-value { display: block; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; font-weight: 600; letter-spacing: -.025em; }
     .metric-unit { color: var(--faint); font-size: 11px; font-weight: 450; }
     .empty-device { margin: 19px -19px -19px; padding: 16px 19px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    .watering { margin: 19px -19px -19px; padding: 16px 19px; border-top: 1px solid var(--line); background: var(--surface-raised); }
+    .watering h4 { margin: 0 0 8px; font-size: 13px; }
+    .watering-note { margin: 6px 0 10px; color: var(--muted); font-size: 11px; }
+    .watering-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+    .watering-fields label { color: var(--muted); font-size: 10px; }
+    .watering-fields input { width: 100%; margin-top: 3px; padding: 7px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); }
+    .watering .button { margin-top: 10px; color: var(--text); }
+    .command-status { margin: 0; color: var(--mint); font-size: 12px; }
+    .command-detail { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
     .empty { padding: 38px 20px; border: 1px dashed var(--line); border-radius: 12px; color: var(--muted); text-align: center; }
     .lower-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr); gap: 13px; margin-top: 42px; }
     .panel-heading { display: flex; align-items: center; justify-content: space-between; padding: 18px 19px; border-bottom: 1px solid var(--line); }
@@ -198,6 +207,30 @@
           {% else %}
             <div class="empty-device">Registered and waiting for its first reading.</div>
           {% endif %}
+          {% if device.model == 'grow' and device.uid %}
+            {% set command = device.watering_command %}
+            <div class="watering">
+              <h4>Remote watering</h4>
+              {% if command and command.status in ['pending', 'delivered'] %}
+                <p class="command-status">{{ command.status|capitalize }} · {% for channel, ml in command.amounts.items() %}{{ channel }} {{ ml }} ml{% if not loop.last %}, {% endif %}{% endfor %}</p>
+                <p class="command-detail">{% if command.status == 'pending' %}Waiting for the next upload; expires after 24 hours.{% else %}Delivered and awaiting acknowledgement. It can no longer be cancelled safely.{% endif %}</p>
+                {% if command.status == 'pending' %}
+                <form action="/api/watering-commands/{{ command.id }}/cancel" method="post"><button class="button" type="submit">Cancel command</button></form>
+                {% endif %}
+              {% elif device.remote_watering.ready %}
+                <form action="/api/devices/{{ device.uid }}/watering-commands" method="post">
+                  <div class="watering-fields">
+                    {% for channel in ['A', 'B', 'C'] %}<label>Channel {{ channel }}<input name="{{ channel }}" type="number" min="0.01" max="{{ device.remote_watering.max_ml }}" step="0.01" placeholder="ml"></label>{% endfor %}
+                  </div>
+                  <p class="watering-note">Maximum {{ device.remote_watering.max_ml }} ml or {{ device.remote_watering.max_seconds }} seconds per channel.{% if device.remote_watering.auto_water %} Automatic watering may also run this cycle.{% endif %}</p>
+                  <button class="button" type="submit">Queue dose</button>
+                </form>
+              {% else %}
+                <p class="command-detail">Set a pump flow calibration during provisioning before remote watering.</p>
+              {% endif %}
+              {% if command and command.status not in ['pending', 'delivered'] %}<p class="command-detail">Last command: {{ command.status }}.</p>{% endif %}
+            </div>
+          {% endif %}
         </article>
         {% endfor %}
       </div>
@@ -248,7 +281,7 @@
     </section>
   </main>
 
-  <footer class="footer shell"><span>Local receiver · data stored in <code>server/data.json</code></span><span>Refresh for the latest data · <a href="/api/data">API access</a></span></footer>
+  <footer class="footer shell"><span>Local receiver · data stored in <code>server/data.db</code></span><span>Refresh for the latest data · <a href="/api/data">API access</a></span></footer>
   <script>
     // Keep timestamps readable in the viewer's local timezone while retaining the ISO value.
     document.querySelectorAll('time[data-time]').forEach(function (element) {

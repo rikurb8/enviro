@@ -37,8 +37,14 @@ def initial_schema(engine):
         session.commit()
 
 
+def watering_commands(engine):
+    """Add durable command delivery and acknowledgement state."""
+    SQLModel.metadata.create_all(engine)
+
+
 MIGRATIONS = [
     initial_schema,
+    watering_commands,
 ]
 
 

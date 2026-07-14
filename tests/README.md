@@ -80,17 +80,21 @@ device.
 | `sim.urequests.sim_requests` | every HTTP request the firmware made (method, url, json payload) |
 | `sim.logging.sim_entries` | everything the firmware logged |
 
-## Testing a call-home that controls watering
+## Testing call-home watering commands
 
-The fake `urequests` is the hook. Your custom destination/call-home module
-will `import urequests`, and in tests it gets the fake, so:
+The custom HTTP destination inspects successful reading responses for a
+`watering_command`. The fake `urequests` queue drives the complete flow:
 
 ```python
-def test_server_can_raise_moisture_targets(sim):
-  sim.config.destination = "my_callhome"
-  sim.urequests.sim_queue_response(json={"moisture_target_a": 80})
-  # ... run the flow, then assert the pump behaviour:
-  assert sim.machine.Pin.sim_writes(12) == [1, 0]
+sim.config.destination = "http"
+sim.config.pump_ml_per_second = 2.0
+sim.urequests.sim_queue_response(json={"watering_command": {
+  "id": "command-1",
+  "amounts": {"A": 20},
+  "ack_url": "http://server/api/watering-commands/command-1/ack",
+}})
+# ... upload a cached reading, then assert the pump behaviour:
+assert sim.machine.Pin.sim_writes(12) == [1, 0]
 ```
 
 If you add new MicroPython-only imports to the firmware, add a matching

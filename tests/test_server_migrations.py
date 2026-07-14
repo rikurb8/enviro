@@ -27,7 +27,7 @@ def test_initial_migration_imports_legacy_json(tmp_path, monkeypatch):
     monkeypatch.setattr(migrations, "LEGACY_STORE", legacy_store)
     engine = create_engine(f"sqlite:///{tmp_path / 'data.db'}")
 
-    assert migrations.migrate(engine) == 1
+    assert migrations.migrate(engine) == len(migrations.MIGRATIONS)
 
     with Session(engine) as session:
         events = session.exec(select(db.Event).order_by(db.Event.id)).all()
@@ -45,7 +45,7 @@ def test_migrations_are_idempotent(tmp_path, monkeypatch):
     monkeypatch.setattr(migrations, "LEGACY_STORE", tmp_path / "missing-data.json")
     engine = create_engine(f"sqlite:///{tmp_path / 'data.db'}")
 
-    assert migrations.migrate(engine) == 1
+    assert migrations.migrate(engine) == len(migrations.MIGRATIONS)
     assert migrations.migrate(engine) == 0
 
     with Session(engine) as session:

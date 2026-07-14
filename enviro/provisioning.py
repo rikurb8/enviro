@@ -153,12 +153,27 @@ def provision_step_grow_sensors(request):
       config.moisture_target_c = int(request.form["moisture_target_c"])
     except ValueError:
       pass
+
+    def optional_positive_float(name):
+      value = request.form.get(name, "").strip()
+      if not value:
+        return None
+      try:
+        value = float(value)
+        return value if value > 0 else None
+      except ValueError:
+        return None
+
+    config.pump_ml_per_second = optional_positive_float("pump_ml_per_second")
+    config.pump_ml_per_second_a = optional_positive_float("pump_ml_per_second_a")
+    config.pump_ml_per_second_b = optional_positive_float("pump_ml_per_second_b")
+    config.pump_ml_per_second_c = optional_positive_float("pump_ml_per_second_c")
     
     write_config()
 
     return redirect(f"http://{DOMAIN}/provision-step-5-done")
   else:
-    return render_template("enviro/html/provision-step-grow-sensors.html", board=model)
+    return render_template("enviro/html/provision-step-grow-sensors.html", board=model, config=config)
 
 
 def call_home():

@@ -43,6 +43,23 @@
     </ul>        
     <input type="hidden" id="auto_water" name="auto_water" value="{{config.auto_water}}" />
 
+    <br />
+
+    <h2>Calibrate pumps for remote watering.</h2>
+    <p>Measure how many millilitres a pump moves in one second. Remote watering stays disabled until a shared rate is set. Add channel overrides when pumps differ.</p>
+
+    <h3>Shared pump rate (ml/second).</h3>
+    <fieldset>
+      <input id="pump_ml_per_second" name="pump_ml_per_second" type="number" min="0.01" step="0.01" placeholder="e.g. 2.5" value="{{config.pump_ml_per_second or ''}}" />
+    </fieldset>
+
+    <h3>Optional per-channel rates (ml/second).</h3>
+    <fieldset>
+      <input name="pump_ml_per_second_a" type="number" min="0.01" step="0.01" placeholder="Channel A" value="{{config.pump_ml_per_second_a or ''}}" />
+      <input name="pump_ml_per_second_b" type="number" min="0.01" step="0.01" placeholder="Channel B" value="{{config.pump_ml_per_second_b or ''}}" />
+      <input name="pump_ml_per_second_c" type="number" min="0.01" step="0.01" placeholder="Channel C" value="{{config.pump_ml_per_second_c or ''}}" />
+    </fieldset>
+
     <script>
       function clampTarget(target) {
         document.getElementById(target).addEventListener("input", function(e) {

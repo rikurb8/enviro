@@ -50,7 +50,11 @@ def test_full_provisioning_flow_writes_config(provisioning):
     "auto_water": "True",
     "moisture_target_a": "60",
     "moisture_target_b": "55",
-    "moisture_target_c": ""})  # left blank -> keeps template default
+    "moisture_target_c": "",  # left blank -> keeps template default
+    "pump_ml_per_second": "2.5",
+    "pump_ml_per_second_a": "2.0",
+    "pump_ml_per_second_b": "",
+    "pump_ml_per_second_c": ""})
   assert response.headers["Location"].endswith("/provision-step-5-done")
 
   server.sim_get("/provision-step-5-done")
@@ -70,6 +74,9 @@ def test_full_provisioning_flow_writes_config(provisioning):
   assert cfg["moisture_target_a"] == 60
   assert cfg["moisture_target_b"] == 55
   assert cfg["moisture_target_c"] == 50
+  assert cfg["pump_ml_per_second"] == 2.5
+  assert cfg["pump_ml_per_second_a"] == 2.0
+  assert cfg["pump_ml_per_second_b"] is None
 
 
 def test_destination_page_shows_the_configured_call_home_url(provisioning):

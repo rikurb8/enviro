@@ -25,6 +25,32 @@ Open `http://<your-computer-LAN-IP>:5001`. During provisioning, set **Provisioni
 
 To receive normal reading uploads, choose **A custom HTTP endpoint** and set its URL to `http://<your-computer-LAN-IP>:5001/api/readings`.
 
+### Remote watering
+
+Enviro Grow boards using `/api/readings` can receive one pending watering
+command in a reading response. The device must first be calibrated on the Grow
+provisioning page. Once its next reading reports that it is ready, the dashboard
+shows per-channel dose controls.
+
+Commands are limited to 100 ml and 60 seconds per channel by default, expire if
+not delivered within 24 hours, and execute at most once by command ID. A pending
+command can be cancelled before delivery. After delivery, the dashboard waits
+for the device's acknowledgement and does not allow cancellation because the
+pump may already have run. Remote doses are explicit and additive to any
+automatic moisture-based watering in the same cycle.
+
+The JSON API is available on the trusted local network:
+
+```text
+POST   /api/devices/<uid>/watering-commands
+DELETE /api/watering-commands/<command-id>
+POST   /api/watering-commands/<command-id>/ack
+```
+
+Create a command with `{"amounts": {"A": 20, "C": 10}}`. Command management
+is intentionally unauthenticated in this local-only version; do not expose the
+server directly to an untrusted network.
+
 Events are kept in a SQLite database at `server/data.db`. Each event stores
 its raw JSON payload verbatim in a JSON column, so nothing is lost to the
 schema. If a `server/data.json` from the old JSON store exists, its events are
@@ -42,8 +68,9 @@ applied with `task server:migrate -- status`:
 ```
 $ task server:migrate -- status
 database: server/data.db
-applied 1 of 1 migrations
+applied 2 of 2 migrations
   [x] 1: initial_schema
+  [x] 2: watering_commands
 ```
 
 To add a migration: write a function in `server/migrations.py` that takes the

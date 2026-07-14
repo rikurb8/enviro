@@ -72,6 +72,142 @@ def drip_noise():
       time.sleep(0.02)
   piezo_pwm.duty_u16(0)
 
+COMMAND_STATE_FILE = "watering-command-state.json"
+COMMAND_HISTORY_LIMIT = 20
+
+
+def _load_command_state():
+  import ujson
+  try:
+    with open(COMMAND_STATE_FILE, "r") as state_file:
+      state = ujson.load(state_file)
+      if isinstance(state, dict) and isinstance(state.get("history"), list):
+        return state
+  except (OSError, ValueError):
+    pass
+  return {"history": [], "pending_ack": None}
+
+
+def _save_command_state(state):
+  import os, ujson
+  temporary = COMMAND_STATE_FILE + ".tmp"
+  with open(temporary, "w") as state_file:
+    state_file.write(ujson.dumps(state))
+  os.rename(temporary, COMMAND_STATE_FILE)
+
+
+def _remember_result(state, result):
+  history = [entry for entry in state["history"] if entry.get("id") != result["id"]]
+  history.append(result)
+  state["history"] = history[-COMMAND_HISTORY_LIMIT:]
+  _save_command_state(state)
+
+
+def remote_watering_capabilities():
+  from enviro import config
+  shared_rate = getattr(config, "pump_ml_per_second", None)
+  return {
+    "ready": isinstance(shared_rate, (int, float)) and shared_rate > 0,
+    "max_ml": getattr(config, "remote_watering_max_ml", 100),
+    "max_seconds": getattr(config, "remote_watering_max_seconds", 60),
+    "auto_water": config.auto_water,
+  }
+
+
+def pending_watering_ack():
+  return _load_command_state().get("pending_ack")
+
+
+def set_watering_ack(command_id, ack_url, result):
+  state = _load_command_state()
+  state["pending_ack"] = {"id": command_id, "ack_url": ack_url, "result": result}
+  _save_command_state(state)
+
+
+def clear_watering_ack(command_id):
+  state = _load_command_state()
+  pending = state.get("pending_ack")
+  if pending and pending.get("id") == command_id:
+    state["pending_ack"] = None
+    _save_command_state(state)
+
+
+def execute_remote_watering(command):
+  """Validate and execute one idempotent, server-issued watering command."""
+  from enviro import config
+
+  command_id = command.get("id") if isinstance(command, dict) else None
+  state = _load_command_state()
+  if command_id:
+    for previous in state["history"]:
+      if previous.get("id") == command_id:
+        if previous.get("status") == "started":
+          previous = {"id": command_id, "status": "interrupted", "error": "device restarted during execution"}
+          _remember_result(state, previous)
+        return previous
+
+  result = {"id": command_id, "status": "rejected"}
+  if not isinstance(command_id, str) or not command_id:
+    result["error"] = "missing command id"
+    return result
+
+  amounts = command.get("amounts")
+  if not isinstance(amounts, dict):
+    result["error"] = "amounts must be an object"
+    _remember_result(state, result)
+    return result
+
+  shared_rate = getattr(config, "pump_ml_per_second", None)
+  max_ml = getattr(config, "remote_watering_max_ml", 100)
+  max_seconds = getattr(config, "remote_watering_max_seconds", 60)
+  runs = []
+  try:
+    if not isinstance(shared_rate, (int, float)) or shared_rate <= 0:
+      raise ValueError("pump calibration is missing")
+    for channel in amounts:
+      if channel not in CHANNEL_NAMES:
+        raise ValueError(f"unknown channel {channel}")
+    for index, channel in enumerate(CHANNEL_NAMES):
+      if channel not in amounts:
+        continue
+      amount = float(amounts[channel])
+      if not amount > 0 or not amount <= max_ml:
+        raise ValueError(f"channel {channel} amount is outside the allowed range")
+      override = getattr(config, f"pump_ml_per_second_{channel.lower()}", None)
+      rate = override if isinstance(override, (int, float)) and override > 0 else shared_rate
+      duration = amount / rate
+      if duration > max_seconds:
+        raise ValueError(f"channel {channel} runtime exceeds the safety limit")
+      runs.append((index, channel, amount, duration))
+    if not runs:
+      raise ValueError("at least one channel amount is required")
+  except (TypeError, ValueError) as exc:
+    result["error"] = str(exc)
+    _remember_result(state, result)
+    return result
+
+  _remember_result(state, {"id": command_id, "status": "started"})
+  completed = []
+  try:
+    for index, channel, amount, duration in runs:
+      logging.info(f"> remote watering pump {channel} with {amount} ml for {duration} second(s)")
+      pump_pins[index].value(1)
+      try:
+        time.sleep(duration)
+      finally:
+        pump_pins[index].value(0)
+      completed.append({"channel": channel, "ml": amount, "seconds": duration})
+    result = {"id": command_id, "status": "completed", "channels": completed}
+  except Exception as exc:
+    for pump in pump_pins:
+      pump.value(0)
+    result = {"id": command_id, "status": "interrupted", "channels": completed, "error": str(exc)}
+
+  state = _load_command_state()
+  _remember_result(state, result)
+  return result
+
+
 def water(moisture_levels):
   from enviro import config
   targets = [
