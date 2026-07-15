@@ -58,7 +58,7 @@ You can use 3xAA or 3xAAA (either alkaline or NiMH), a single cell LiPo battery,
 
 ## Development
 
-The root [Taskfile](Taskfile.yml) provides five helpers. Install
+The root [Taskfile](Taskfile.yml) provides development helpers. Install
 [uv](https://docs.astral.sh/uv/) and [Task](https://taskfile.dev/) first, then
 run these commands from the repository root:
 
@@ -68,6 +68,10 @@ run these commands from the repository root:
 | `task setup` | Sync every uv-managed desktop dependency. |
 | `task test` | Run the firmware testbench. |
 | `task server` | Start the local dashboard on port 5001. |
+| `task sim` | Run the Enviro Grow fleet simulator in the foreground. |
+| `task sim:cli -- …` | Manage simulated devices and fleets. |
 | `task check` | Compile desktop Python code and run the test suite. |
 
-See [server/README.md](server/README.md) for dashboard setup and endpoint URLs.
+See [server/README.md](server/README.md) for dashboard setup and endpoint URLs,
+and [documentation/simulator.md](documentation/simulator.md) for the simulator
+quick start, CLI reference, fleet format, and behavior model.

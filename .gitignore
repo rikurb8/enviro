@@ -140,6 +140,7 @@ log.txt
 uploads/
 readings/
 rain.txt
+.enviro-simulator/
 
 # Pycharm idea
 .idea/

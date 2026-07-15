@@ -12,9 +12,9 @@ tasks:
       - uv sync --all-groups
 
   test:
-    desc: Run the firmware testbench
+    desc: Run the firmware and simulator testbenches
     cmds:
-      - uv run pytest tests/
+      - uv run --all-groups pytest tests/
 
   server:
     desc: Start the local dashboard at http://localhost:5001
@@ -27,8 +27,38 @@ tasks:
     cmds:
       - uv run --group server python migrations.py {{.CLI_ARGS}}
 
+  sim:
+    desc: Run the Enviro Grow simulator daemon in the foreground
+    cmds:
+      - uv run --group simulator python -m enviro_simulator daemon run
+
+  sim:start:
+    desc: Start the Enviro Grow simulator daemon in the background
+    cmds:
+      - uv run --group simulator python -m enviro_simulator daemon start
+
+  sim:stop:
+    desc: Stop the background simulator daemon
+    cmds:
+      - uv run --group simulator python -m enviro_simulator daemon stop
+
+  sim:status:
+    desc: Show simulator daemon status
+    cmds:
+      - uv run --group simulator python -m enviro_simulator daemon status
+
+  sim:cli:
+    desc: Run simulator CLI commands (for example, task sim:cli -- device list)
+    cmds:
+      - uv run --group simulator python -m enviro_simulator {{.CLI_ARGS}}
+
+  sim:smoke:
+    desc: Run the 100-device simulator smoke benchmark
+    cmds:
+      - uv run --group simulator python tests/simulator/smoke.py
+
   check:
     desc: Compile desktop Python code and run the full test suite
     deps: [test]
     cmds:
-      - uv run python -m compileall -q enviro main.py tests
+      - uv run python -m compileall -q enviro enviro_simulator main.py tests

@@ -17,3 +17,4 @@ server = [
     "flask>=3.0,<4",
     "sqlmodel>=0.0.22,<1",
 ]
+simulator = ["aiohttp>=3.10,<4"]
